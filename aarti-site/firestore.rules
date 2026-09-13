@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// Paste into: Firebase console > Firestore Database > Rules > Publish
+//
+// OPTION A — anyone with the link can read and edit.
+// Use this while you are setting things up, or if the link stays inside the
+// committee group. Unlike the default test-mode rules, this one does not
+// expire after 30 days and does not expose the rest of the database.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /rota/current {
+      allow read, write: if true;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// OPTION B — everyone reads, only you edit. Recommended once the link is out.
+//
+// Needs Google sign-in added to the page, so ask before switching to it.
+// Steps: enable Authentication > Sign-in method > Google, sign in once, copy
+// your UID from the Users tab, and paste it below in place of YOUR_UID_HERE.
+//
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     match /rota/current {
+//       allow read: if true;
+//       allow write: if request.auth != null
+//                    && request.auth.uid == 'YOUR_UID_HERE';
+//     }
+//     match /{document=**} {
+//       allow read, write: if false;
+//     }
+//   }
+// }

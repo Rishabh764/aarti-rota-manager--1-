@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aarti Rota Manager — Ganesh Chaturthi 2026</title>
+<meta name="description" content="Working tool for managing the society aarti rota, 14 to 25 September 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-mark" aria-hidden="true"></div>
+  <div class="bar-inner">
+    <div class="bar-title">
+      <h1>Aarti rota manager</h1>
+      <p>Ganesh Chaturthi 2026 &middot; 14&ndash;25 September &middot; 12 days</p>
+    </div>
+    <div class="bar-actions">
+      <div class="sync">
+        <span class="pill wait" id="sync-status">Starting</span>
+        <span class="sync-time" id="sync-time"></span>
+      </div>
+      <button type="button" class="btn-ghost" id="btn-print">Print rota</button>
+      <button type="button" class="btn-ghost" id="btn-csv">Export CSV</button>
+      <button type="button" class="btn-ghost danger" id="btn-reset">Reset</button>
+    </div>
+  </div>
+</header>
+
+<div id="warnings" class="warnings" role="status" aria-live="polite"></div>
+
+<main class="shell">
+
+  <!-- ============ CONTROLS ============ -->
+  <aside class="side">
+
+    <section class="card counts" aria-label="Rota totals">
+      <dl>
+        <div><dt>Hosting</dt><dd id="s-host">&mdash;</dd></div>
+        <div><dt>Off rota</dt><dd id="s-vac">&mdash;</dd></div>
+        <div><dt>Slots used</dt><dd id="s-slot">&mdash;</dd></div>
+        <div><dt>Slots free</dt><dd id="s-free">&mdash;</dd></div>
+        <div class="wide"><dt>Fund collected</dt><dd id="s-fund">&mdash;</dd></div>
+      </dl>
+    </section>
+
+    <!-- Move -->
+    <form class="card tool" id="form-move" novalidate>
+      <h2>Move a flat</h2>
+      <p class="hint">Reassigns the flat to a different day. Also puts a removed flat back on the rota.</p>
+      <div class="picker">
+        <div class="field">
+          <label for="m-wing">Tower</label>
+          <select id="m-wing"><option value="">&mdash;</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+        </div>
+        <div class="field">
+          <label for="m-floor">Floor</label>
+          <select id="m-floor"><option value="">&mdash;</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        </div>
+        <div class="field">
+          <label for="m-num">Flat no.</label>
+          <input id="m-num" type="text" inputmode="numeric" maxlength="3" placeholder="101" autocomplete="off">
+        </div>
+      </div>
+      <p class="resolved" id="m-resolved"></p>
+      <div class="field">
+        <label for="m-date">Move to</label>
+        <select id="m-date"><option value="">&mdash;</option></select>
+      </div>
+      <p class="msg" id="m-msg" role="alert"></p>
+      <button type="submit" class="btn">Move flat</button>
+    </form>
+
+    <!-- Remove -->
+    <form class="card tool alt" id="form-remove" novalidate>
+      <h2>Remove a flat</h2>
+      <p class="hint">Takes the flat off the rota. Use for empty flats or families not taking part.</p>
+      <div class="picker">
+        <div class="field">
+          <label for="r-wing">Tower</label>
+          <select id="r-wing"><option value="">&mdash;</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+        </div>
+        <div class="field">
+          <label for="r-floor">Floor</label>
+          <select id="r-floor"><option value="">&mdash;</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        </div>
+        <div class="field">
+          <label for="r-num">Flat no.</label>
+          <input id="r-num" type="text" inputmode="numeric" maxlength="3" placeholder="104" autocomplete="off">
+        </div>
+      </div>
+      <p class="resolved" id="r-resolved"></p>
+      <p class="msg" id="r-msg" role="alert"></p>
+      <button type="submit" class="btn warn">Remove flat</button>
+    </form>
+
+    <section class="card log" aria-labelledby="log-h">
+      <h2 id="log-h">Changes this session</h2>
+      <ol id="log-list"><li class="log-empty">No changes yet.</li></ol>
+    </section>
+
+  </aside>
+
+  <!-- ============ TABLES ============ -->
+  <section class="main-col">
+
+    <div class="card">
+      <div class="card-head">
+        <h2 id="view-title">Schedule</h2>
+        <div class="tabs" role="tablist">
+          <button class="tab is-on" role="tab" aria-selected="true" data-view="schedule">Day by day</button>
+          <button class="tab" role="tab" aria-selected="false" data-view="flats">Flat lookup</button>
+        </div>
+      </div>
+
+      <div id="view-schedule" class="view">
+        <div class="table-wrap">
+          <table class="grid" id="tbl-schedule">
+            <caption class="sr-only">Aarti schedule by day</caption>
+            <thead></thead><tbody></tbody><tfoot></tfoot>
+          </table>
+        </div>
+        <p class="legend">
+          <span class="chip pair"></span>joint owner, one slot
+          <span class="chip open"></span>free slot
+          <span class="cap-key">4</span>a red day number means more than 7 flats that day
+        </p>
+      </div>
+
+      <div id="view-flats" class="view" hidden>
+        <h2 class="print-only">Flat lookup</h2>
+        <div class="filters">
+          <label class="sr-only" for="f-search">Search</label>
+          <input id="f-search" type="search" placeholder="Search flat or date">
+          <label class="sr-only" for="f-wing">Tower</label>
+          <select id="f-wing"><option value="">All towers</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+          <label class="sr-only" for="f-status">Status</label>
+          <select id="f-status">
+            <option value="">All statuses</option>
+            <option value="Occupied">On rota</option>
+            <option value="Vacant">Off rota</option>
+          </select>
+          <span class="count" id="f-count"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="grid" id="tbl-flats">
+            <caption class="sr-only">Every flat with its aarti date</caption>
+            <thead>
+              <tr>
+                <th>Flat</th><th>Tower</th><th>Floor</th><th>Status</th>
+                <th>Aarti date</th><th>Day</th><th class="num">Contribution</th><th>Notes</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="legend">Contribution amounts save as you type.</p>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<footer>
+  <p>Changes are stored in this browser only. Export the CSV or print before handing the rota over.</p>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<!-- Module scripts are deferred, so this runs after app.js has started. -->
+<script type="module" src="js/sync.js"></script>
+</body>
+</html>

@@ -17,7 +17,8 @@
 import { initializeApp }
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import {
-  getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp
+  getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp,
+  collection, query, orderBy, getDocs, writeBatch
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 const SCHEMA = 1;
@@ -125,11 +126,73 @@ if(!cfg || !cfg.projectId || String(cfg.apiKey).startsWith("YOUR_")){
       err => report(err, "Live updates stopped")
     );
 
-    // app.js calls this after every change.
+    /* Expenses and the log are subcollections, not fields on the rota
+       document. Each entry is its own document, so two devices adding at the
+       same moment both survive — an array field would lose one of them. Both
+       subcollections spring into existence on the first write, same as the
+       rota document did. */
+    const expensesRef = collection(ref, "expenses");
+    const logRef      = collection(ref, "log");
+
+    onSnapshot(query(expensesRef, orderBy("at", "desc")),
+      snap => {
+        const rows = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+        window.dispatchEvent(new CustomEvent("rota:expenses", { detail: rows }));
+      },
+      err => report(err, "Expenses stopped updating")
+    );
+
+    onSnapshot(query(logRef, orderBy("at", "desc")),
+      snap => {
+        const rows = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+        window.dispatchEvent(new CustomEvent("rota:log", { detail: rows }));
+      },
+      err => report(err, "Log stopped updating")
+    );
+
+    // Delete every document in a subcollection, in batches of 400.
+    async function wipe(colRef){
+      const snap = await getDocs(colRef);
+      let batch = writeBatch(db), n = 0;
+      for(const d of snap.docs){
+        batch.delete(d.ref);
+        if(++n % 400 === 0){ await batch.commit(); batch = writeBatch(db); }
+      }
+      if(n % 400 !== 0 || n === 0) await batch.commit();
+    }
+
+    // app.js calls these.
     window.RotaSync = {
       ready: true,
+
       push(state){
         return setDoc(ref, encode(state)).catch(err => report(err, "Could not save"));
+      },
+
+      addExpense(entry){
+        const { id } = entry;
+        return setDoc(doc(expensesRef, id), {
+          what: entry.what, amount: Number(entry.amount), at: entry.at
+        }).catch(err => report(err, "Could not save the expense"));
+      },
+
+      removeExpense(id){
+        return deleteDoc(doc(expensesRef, id))
+          .catch(err => report(err, "Could not delete the expense"));
+      },
+
+      addLog(entry){
+        const { id } = entry;
+        return setDoc(doc(logRef, id), {
+          text: entry.text, kind: entry.kind || "rota", at: entry.at
+        }).catch(err => report(err, "Could not write the log entry"));
+      },
+
+      async clearAll(){
+        try{
+          await wipe(expensesRef);
+          await wipe(logRef);
+        }catch(err){ report(err, "Could not clear expenses and log"); }
       }
     };
 

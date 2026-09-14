@@ -684,19 +684,6 @@ function init(){
   // toolbar
   document.getElementById('btn-print').addEventListener('click', () => window.print());
   document.getElementById('btn-csv').addEventListener('click', downloadCSV);
-  document.getElementById('btn-reset').addEventListener('click', () => {
-    if(!confirm('Reset to the original rota? Every change, including contributions, will be cleared.')) return;
-    state = freshState();
-    if(syncOn()) window.RotaSync.clearAll();
-    expenses = []; changeLog = [];
-    save();
-    setMsg('m-msg',''); setMsg('r-msg',''); setMsg('exp-msg','');
-    document.getElementById('m-resolved').textContent = '';
-    document.getElementById('r-resolved').textContent = '';
-    renderAll(); renderLog();
-    logChange('Rota reset to the original schedule.', 'reset');
-    toast('Reset to the original rota.');
-  });
 
   // sync.js reads and writes the rota through this.
   window.RotaApp = {

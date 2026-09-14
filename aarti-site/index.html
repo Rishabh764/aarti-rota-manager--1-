@@ -50,6 +50,26 @@
       </dl>
     </section>
 
+    <!-- Expenses -->
+    <section class="card tool money-tool" aria-labelledby="exp-h">
+      <h2 id="exp-h">Expenses</h2>
+      <p class="hint">What the fund has been spent on. Subtracted from the total.</p>
+      <form id="form-expense" novalidate>
+        <div class="field">
+          <label for="exp-what">Spent on</label>
+          <input id="exp-what" type="text" placeholder="Decorations, prasad, sound system" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="exp-amount">Amount (&#8377;)</label>
+          <input id="exp-amount" type="number" min="1" step="1" placeholder="2500" autocomplete="off">
+        </div>
+        <p class="msg" id="exp-msg" role="alert"></p>
+        <button type="submit" class="btn">Add expense</button>
+      </form>
+      <ul id="exp-list" class="exp-list"><li class="log-empty">Nothing spent yet.</li></ul>
+      <p class="exp-foot">Total spent <strong id="exp-total">&#8377;&nbsp;0</strong></p>
+    </section>
+
     <!-- Move -->
     <form class="card tool" id="form-move" novalidate>
       <h2>Move a flat</h2>
@@ -99,26 +119,6 @@
       <p class="msg" id="r-msg" role="alert"></p>
       <button type="submit" class="btn warn">Remove flat</button>
     </form>
-
-    <!-- Expenses -->
-    <section class="card tool money-tool" aria-labelledby="exp-h">
-      <h2 id="exp-h">Expenses</h2>
-      <p class="hint">What the fund has been spent on. Subtracted from the total.</p>
-      <form id="form-expense" novalidate>
-        <div class="field">
-          <label for="exp-what">Spent on</label>
-          <input id="exp-what" type="text" placeholder="Decorations, prasad, sound system" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="exp-amount">Amount (&#8377;)</label>
-          <input id="exp-amount" type="number" min="1" step="1" placeholder="2500" autocomplete="off">
-        </div>
-        <p class="msg" id="exp-msg" role="alert"></p>
-        <button type="submit" class="btn">Add expense</button>
-      </form>
-      <ul id="exp-list" class="exp-list"><li class="log-empty">Nothing spent yet.</li></ul>
-      <p class="exp-foot">Total spent <strong id="exp-total">&#8377;&nbsp;0</strong></p>
-    </section>
 
     <section class="card log" aria-labelledby="log-h">
       <div class="log-head">
